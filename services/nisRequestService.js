@@ -1,43 +1,66 @@
-/* 
+/** 
 * Copyright 2017–2018, LaborX PTY
 * Licensed under the AGPL Version 3 license.
 * @author Kirill Sergeev <cloudkserg11@gmail.com>
 */
 const request = require('request-promise'),
-  config = require('../config'),
-  { URL } = require('url'),
-  bunyan = require('bunyan'),
-  log = bunyan.createLogger({name: 'nemBalanceProcessor.requestService'});
+  {URL} = require('url');
 
-const baseUrl = config.nis.server;
-
-const getMosaicsForAccount = async addr => get(`/account/mosaic/owned?address=${addr}`);
-const getMosaicsDefinition = async id => get(`/namespace/mosaic/definition/page?namespace=${id}`);
-const getAccount = async addr => get(`/account/get?address=${addr}`);
-const getUnconfirmedTransactions = async addr => get(`/account/unconfirmedTransactions?address=${addr}`);
-const getBlock = async (blockHeight) => post('/block/at/public', {height: blockHeight});
-
-const get = query => makeRequest(query, 'GET');
-const post = (query, body) => makeRequest(query, 'POST', body);
-
-const makeRequest = (path, method, body) => {
+const makeRequest = (url, method, body) => {
   const options = {
     method,
     body,
-    uri: new URL(path, baseUrl),
+    uri: url,
     json: true
   };
-  return request(options).catch(e => errorHandler(e));
+  return request(options);
 };
 
-const errorHandler = err => {
-  log.error(err);
+const createUrl = (providerUri, path) => {
+  return new URL(path, providerUri);
 };
 
-module.exports = { 
-  getAccount,
-  getMosaicsForAccount,
-  getUnconfirmedTransactions,
-  getMosaicsDefinition,
-  getBlock
+
+/**
+ * 
+ * @param {ProviderService} providerService 
+ * @return {Object with functions}
+ */
+module.exports = (providerService) => {
+  
+  const createProviderUrl = async (path) => {
+    const provider = await providerService.getProvider();
+    return createUrl(provider.getHttp(), path);
+  };
+
+  const post = async (path, body) => {
+    const providerUrl = await createProviderUrl(path);
+    return await makeRequest(providerUrl, 'POST', body);
+  };
+
+  const get = async (path) => {
+    const providerUrl = await createProviderUrl(path);
+    return await makeRequest(providerUrl, 'GET');
+  };
+
+
+  return {
+    async getMosaicsForAccount (addr) { 
+      return get(`/account/mosaic/owned?address=${addr}`);
+    },
+    async getMosaicsDefinition (id) {
+      return get(`/namespace/mosaic/definition/page?namespace=${id}`);
+    },
+    async getAccount (addr) { 
+      return get(`/account/get?address=${addr}`);
+    },
+    async getUnconfirmedTransactions (addr) {
+      return get(`/account/unconfirmedTransactions?address=${addr}`);
+    },
+
+    async getBlock (blockHeight) {
+      return post('/block/at/public', {height: blockHeight});
+    }
+    
+  };
 };

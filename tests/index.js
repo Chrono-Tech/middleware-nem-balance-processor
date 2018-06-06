@@ -14,7 +14,12 @@ mongoose.Promise = Promise;
 mongoose.connect(config.mongo.accounts.uri, {useMongoClient: true});
 
 const expect = require('chai').expect,
-  nis = require('../services/nisRequestService'),
+  Provider = require('../models/provider'),
+  nis = require('../services/nisRequestService')({
+    getProvider: () => {
+      return new Provider(2, config.node.providers[2].ws, config.node.providers[2].http, 0); 
+    }
+  }),
   accountModel = require('../models/accountModel'),
   amqp = require('amqplib'),
   ctx = {};
@@ -63,8 +68,8 @@ describe('core/balance processor', function () {
 
     try {
       await channel.assertExchange('events', 'topic', {durable: false});
-      await channel.assertQueue(`app_${config.rabbit.serviceName}_test.balance`);
-      await channel.bindQueue(`app_${config.rabbit.serviceName}_test.balance`, 'events', `${config.rabbit.serviceName}_balance.${ctx.tx.recipient}`);
+      await channel.assertQueue(`${config.rabbit.serviceName}_test.balance`);
+      await channel.bindQueue(`${config.rabbit.serviceName}_test.balance`, 'events', `${config.rabbit.serviceName}_balance.${ctx.tx.recipient}`);
     } catch (e) {
       channel = await amqpInstance.createChannel();
     }
@@ -78,7 +83,7 @@ describe('core/balance processor', function () {
           channel.consume(`app_${config.rabbit.serviceName}_test.balance`, () => {
             amqpInstance.close();
             res();
-          }, {noAck: true})
+          }, {noAck: true});
         });
       })()
     ]);

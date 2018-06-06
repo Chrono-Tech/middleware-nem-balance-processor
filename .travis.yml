@@ -20,8 +20,18 @@ install:
   - npm install -g pm2
 
 before_script:
-    - echo NIS=http://bigalice2.nem.ninja:7890 > .env
-    - sleep 30 && pm2 start index.js
+    - echo PROVIDERS=http://localhost:8010@http://localhost:8011,http://localhost:8020@http://localhost:8021,http://192.3.61.243:7890@http://192.3.61.243:7778 >> .env
+    - $TRAVIS_BUILD_DIR/tests/proxy/server.js  8010 8011 --name 'proxy1' &
+    - node $TRAVIS_BUILD_DIR/tests/proxy/server.js  8020 8021 --name 'proxy2' &
+    - |
+      if [ "$TRAVIS_BRANCH" == "master" ]; then
+        cd $TRAVIS_BUILD_DIR/ && git clone https://github.com/chronobank/middleware-nem-blockprocessor 
+      else
+        cd $TRAVIS_BUILD_DIR/ && git clone -b feature/MD-352 https://github.com/cloudkserg/middleware-nem-blockprocessor 
+      fi;
+    - cd $TRAVIS_BUILD_DIR/middleware-nem-blockprocessor && npm install
+    - sleep 30 && cd $TRAVIS_BUILD_DIR/middleware-nem-blockprocessor && pm2 start index.js
+    - cd $TRAVIS_BUILD_DIR && pm2 start index.js
 
 script:
   - sleep 120 && npm test -- --coverage
