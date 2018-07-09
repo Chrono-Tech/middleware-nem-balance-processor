@@ -13,6 +13,9 @@ const _ = require('lodash'),
   providerService = require('../../services/providerService'),
   Promise = require('bluebird');
 
+const DIVISIBILITY = 1000000;
+
+
 const flattenMosaics = mosObj =>
   _.transform(mosObj, (acc, m) => {
     if (m.mosaicId && m.mosaicId.namespaceId)
@@ -29,17 +32,18 @@ const convertBalanceWithDivisibility = (balance) => {
   let vested = _.get(balance, 'vested', 0);
 
   return {
+    divisibility: DIVISIBILITY,
     confirmed: {
       value: confirmed,
-      amount: `${(confirmed / 1000000).toFixed(6)}`
+      amount: `${(confirmed / DIVISIBILITY).toFixed(6)}`
     },
     unconfirmed: {
       value: unconfirmed,
-      amount: `${(unconfirmed / 1000000).toFixed(6)}`
+      amount: `${(unconfirmed / DIVISIBILITY).toFixed(6)}`
     },
     vested: {
       value: vested,
-      amount: `${(vested / 1000000).toFixed(6)}`
+      amount: `${(vested / DIVISIBILITY).toFixed(6)}`
     }
   };
 };
@@ -64,7 +68,7 @@ const convertMosaicsWithDivisibility = async (mosaics) => {
 
     let definition = await provider.getMosaicsDefinition(mosaic.namespaceId);
 
-    mosaic.valueConfirmed = mosaic.quantity.confirmed / _.chain(definition)
+    const divisibility = _.chain(definition)
       .get('data')
       .find({mosaic: {id: {name: mosaic.name}}})
       .get('mosaic.properties')
@@ -73,20 +77,17 @@ const convertMosaicsWithDivisibility = async (mosaics) => {
       .thru(val => Math.pow(10, val))
       .value();
 
-    mosaic.valueUnconfirmed = mosaic.quantity.unconfirmed / _.chain(definition)
-      .get('data')
-      .find({mosaic: {id: {name: mosaic.name}}})
-      .get('mosaic.properties')
-      .find({name: 'divisibility'})
-      .get('value', 1)
-      .thru(val => Math.pow(10, val))
-      .value();
+    mosaic.divisibility = divisibility;
+    mosaic.valueConfirmed = mosaic.quantity.confirmed / divisibility;
+    mosaic.valueUnconfirmed = mosaic.quantity.unconfirmed / divisibility;
 
     return mosaic;
   });
 
   return _.transform(mosaics, (acc, item) => {
     acc[`${item.namespaceId}:${item.name}`] = {
+      name: item.name,
+      divisibility: item.divisibility,
       confirmed: {
         amount: item.valueConfirmed,
         value: item.quantity.confirmed
