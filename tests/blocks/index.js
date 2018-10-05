@@ -40,7 +40,7 @@ module.exports = (ctx) => {
   it('validate after transaction getUpdatedBalance function', async () => {
     const balance  = await getUpdatedBalance(ctx.accounts[0].address);
 
-    const tx = await waitTransaction(sender.sendTransaction.bind(sender, ctx.accounts, 0.00001))
+    const tx = await waitTransaction(sender.sendTransaction.bind(sender, ctx.accounts, 0.00001));
     const newBalance = await getUpdatedBalance(ctx.accounts[0].address);
 
 

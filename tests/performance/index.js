@@ -5,13 +5,12 @@
  */
 
 const models = require('../../models'),
-  Api = require('../utils/Api'),
   config = require('../../config'),
   getUpdatedBalance = require('../../utils/balance/getUpdatedBalance'),
   expect = require('chai').expect,
-  providerService = require('../../services/providerService'),
   sender = require('../utils/sender'),
   Promise = require('bluebird'),
+  _ = require('lodash'),
   spawn = require('child_process').spawn;
 
 module.exports = (ctx) => {
@@ -40,7 +39,7 @@ module.exports = (ctx) => {
     ctx.balanceCalcTime = 10000;
 
     await ctx.amqp.channel.deleteQueue(`${config.rabbit.serviceName}.balance_processor`);
-    ctx.balanceProcessorPid = spawn('node', ['index.js'], {env: process.env, stdio: 'ignore'});
+    ctx.balanceProcessorPid = spawn('node', ['index.js'], {env: _.merge({PROVIDERS: ctx.providers.join(',')}, process.env), stdio: 'ignore'});
     await Promise.delay(10000);
   });
 

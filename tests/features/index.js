@@ -12,7 +12,6 @@ const models = require('../../models'),
   providerService = require('../../services/providerService'),
   waitTransaction = require('../utils/waitTransaction'),
   sender = require('../utils/sender'),
-  mosaicSender = require('../utils/mosaicSender'),
   spawn = require('child_process').spawn,
   expect = require('chai').expect,
   Promise = require('bluebird');
@@ -23,7 +22,7 @@ module.exports = (ctx) => {
     await models.accountModel.remove({});
 
     await ctx.amqp.channel.deleteQueue(`${config.rabbit.serviceName}.balance_processor`);
-    ctx.balanceProcessorPid = spawn('node', ['index.js'], {env: process.env, stdio: 'inherit'});
+    ctx.balanceProcessorPid = spawn('node', ['index.js'], {env: _.merge({PROVIDERS: ctx.providers.join(',')}, process.env), stdio: 'ignore'});
     await Promise.delay(10000);
 
     await models.accountModel.create({
@@ -76,16 +75,14 @@ module.exports = (ctx) => {
      await Promise.all([
        (async () => {
          tx = await waitTransaction(sender.sendTransaction.bind(sender, ctx.accounts, 0.000001));
-         balance0 = (await instance.getAccount(ctx.accounts[0].address))['account']['balance'];
-         balance1 = (await instance.getAccount(ctx.accounts[1].address))['account']['balance'];
+         balance0 = (await instance.getAccount(ctx.accounts[0].address)).account.balance;
+         balance1 = (await instance.getAccount(ctx.accounts[1].address)).account.balance;
          await ctx.amqp.channel.publish('events', `${config.rabbit.serviceName}_transaction.${ctx.accounts[0].address}`, new Buffer(JSON.stringify(tx)));
          await ctx.amqp.channel.publish('events', `${config.rabbit.serviceName}_transaction.${ctx.accounts[1].address}`, new Buffer(JSON.stringify(tx)));
        })(),
        (async () => {
          await ctx.amqp.channel.assertQueue(`app_${config.rabbit.serviceName}_test_features.balance`, {autoDelete: true, durable: false});
-         await ctx.amqp.channel.bindQueue(
-           `app_${config.rabbit.serviceName}_test_features.balance`, 'events', 
-           `${config.rabbit.serviceName}_balance.${ctx.accounts[1].address}`);
+         await ctx.amqp.channel.bindQueue(`app_${config.rabbit.serviceName}_test_features.balance`, 'events', `${config.rabbit.serviceName}_balance.${ctx.accounts[1].address}`);
          await new Promise(res =>
            ctx.amqp.channel.consume(`app_${config.rabbit.serviceName}_test_features.balance`, 
              async data => {
@@ -93,8 +90,6 @@ module.exports = (ctx) => {
                if (!data)
                  return;
                const message = JSON.parse(data.content.toString());
-
-
                expect(_.isEqual(JSON.parse(JSON.stringify(tx)), message.tx)).to.equal(true);
                expect(message.balance.confirmed.value).to.eq(balance1);
                expect(message.address).to.eq(ctx.accounts[1].address);
@@ -106,8 +101,7 @@ module.exports = (ctx) => {
        })(),
        (async () => {
          await ctx.amqp.channel.assertQueue(`app_${config.rabbit.serviceName}_test_features2.balance`, {autoDelete: true, durable: false});
-         await ctx.amqp.channel.bindQueue(`app_${config.rabbit.serviceName}_test_features2.balance`,
-           'events', `${config.rabbit.serviceName}_balance.${ctx.accounts[0].address}`);
+         await ctx.amqp.channel.bindQueue(`app_${config.rabbit.serviceName}_test_features2.balance`, 'events', `${config.rabbit.serviceName}_balance.${ctx.accounts[0].address}`);
          await new Promise(res =>
            ctx.amqp.channel.consume(
              `app_${config.rabbit.serviceName}_test_features2.balance`,
@@ -172,6 +166,7 @@ module.exports = (ctx) => {
      ]);
    });
 
+/*
   it('add new Mosaics', async () => {
 
     const instance = await providerService.get();
@@ -217,6 +212,7 @@ module.exports = (ctx) => {
       })()
     ]);
   });
+*/
 
   after (() => {
     ctx.balanceProcessorPid.kill();

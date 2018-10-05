@@ -43,6 +43,7 @@ class ProviderService extends AbstractProvider {
 
     this.rabbitmqChannel.consume(`${config.rabbit.serviceName}_provider.${this.id}`, async (message) => {
       message = JSON.parse(message.content.toString());
+
       const providerURI = config.node.providers[message.index];
 
       if (this.connector && this.connector.http === providerURI.http)

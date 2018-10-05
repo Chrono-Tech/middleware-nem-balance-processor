@@ -8,7 +8,6 @@ const models = require('../../models'),
   config = require('../../config'),
   _ = require('lodash'),
   providerService = require('../../services/providerService'),
-  Api = require('../utils/Api'),
   expect = require('chai').expect,
   Promise = require('bluebird'),
   spawn = require('child_process').spawn;
@@ -38,7 +37,10 @@ module.exports = (ctx) => {
     });
 
     await ctx.amqp.channel.deleteQueue(`${config.rabbit.serviceName}.balance_processor`);
-    ctx.balanceProcessorPid = spawn('node', ['index.js'], {env: process.env, stdio: 'ignore'});
+    ctx.balanceProcessorPid = spawn('node', ['index.js'], {
+      env: _.merge({PROVIDERS: ctx.providers.join(',')}, process.env),
+      stdio: 'ignore'
+    });
     await Promise.delay(10000);
   });
 
@@ -47,9 +49,12 @@ module.exports = (ctx) => {
     const address = ctx.accounts[0].address;
 
     const transaction = {
-        address
+      address
     };
-    await ctx.amqp.channel.assertQueue(`app_${config.rabbit.serviceName}_test_fuzz.balance`, {autoDelete: true, durable: false});
+    await ctx.amqp.channel.assertQueue(`app_${config.rabbit.serviceName}_test_fuzz.balance`, {
+      autoDelete: true,
+      durable: false
+    });
     await ctx.amqp.channel.bindQueue(`app_${config.rabbit.serviceName}_test_fuzz.balance`, 'events', `${config.rabbit.serviceName}_balance.${address}`);
 
     await ctx.amqp.channel.publish('events', `${config.rabbit.serviceName}_transaction.${address}`, new Buffer(JSON.stringify(transaction)));

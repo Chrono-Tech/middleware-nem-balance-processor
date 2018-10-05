@@ -10,22 +10,14 @@ services:
   - rabbitmq
 
 before_install:
-  - export PROVIDERS=http://bob.nem.ninja:7890@http://bob.nem.nimja:7778,http://192.3.61.243:7890@http://192.3.61.243:7778
   - mongo data --eval 'db.dropDatabase();'
   - sudo apt-get update
   - sudo apt-get install python2.7 git-all pkg-config libncurses5-dev libssl-dev libnss3-dev libexpat-dev libc6-dev -y
 
 install:
-  - sudo rabbitmq-plugins enable rabbitmq_web_stomp
   - npm install
-  - npm install -g pm2
-
 script:
   - npm test -- --coverage
-
-after_script:
-  - pm2 logs --nostream
-  - pm2 kill && pkill PM2
 
 after_success:
   - FULL_GCR_KEY="-----BEGIN PRIVATE KEY-----\n"$GCR_KEY"\n-----END PRIVATE KEY-----\n"
