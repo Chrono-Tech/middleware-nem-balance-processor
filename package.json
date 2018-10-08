@@ -27,7 +27,6 @@
     "eslint": "^4.10.0",
     "http-proxy": "^1.17.0",
     "find-process": "^1.1.1",
-    "middleware-nem-blockprocessor": "github:chronobank/middleware-nem-blockprocessor",
     "eslint-plugin-chronobank": "github:chronobank/eslint-plugin-chronobank",
     "mocha": "^4.0.1"
   },
@@ -46,6 +45,8 @@
     "nem-sdk": "^1.6.2",
     "request": "^2.83.0",
     "request-promise": "^4.2.2",
-    "require-all": "^3.0.0"
+    "require-all": "^3.0.0",
+    "sockjs-client": "^1.1.4",
+    "webstomp-client": "1.2.0"
   }
 }
