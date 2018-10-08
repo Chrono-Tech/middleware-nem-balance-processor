@@ -108,6 +108,17 @@ class Api {
     return this._makeRequest(url);
   }
 
+
+  /**
+   * @function
+   * @description get blockchain current height
+   * @return {Promise<*>}
+   */
+  async getHeight () {
+    const data = await this._makeRequest('chain/height');
+    return data.height;
+  }
+
 }
 
 module.exports = Api;

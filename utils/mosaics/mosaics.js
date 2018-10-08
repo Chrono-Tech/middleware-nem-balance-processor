@@ -26,9 +26,7 @@ const getMosaicDivisibility = async (mosaic) => {
       };
     })
     .value();
-
   let definition = await provider.getMosaicsDefinition(mosaic.namespaceId);
-
   return _.chain(definition)
     .get('data')
     .find({mosaic: {id: {name: mosaic.name}}})

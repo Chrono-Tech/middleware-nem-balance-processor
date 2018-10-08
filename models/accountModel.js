@@ -56,4 +56,5 @@ const Account = new mongoose.Schema({
   toJSON: {getters: true}
 });
 
-module.exports = mongoose.model(`${config.mongo.accounts.collectionPrefix}Account`, Account);
+
+module.exports = () => mongoose.model(`${config.mongo.accounts.collectionPrefix}Account`, Account);

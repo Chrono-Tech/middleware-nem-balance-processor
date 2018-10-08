@@ -96,6 +96,11 @@ The options are presented below:
 | RABBIT_SERVICE_NAME   | namespace for all rabbitmq queues, like 'app_nem_transaction'
 | NETWORK   | network name (alias)- is used for connecting via ipc (see block processor section)
 | NIS   | the path to node rest api for get balance for user
+| SYSTEM_RABBIT_URI   | rabbitmq URI connection string for infrastructure
+| SYSTEM_RABBIT_SERVICE_NAME   | rabbitmq service name for infrastructure
+| SYSTEM_RABBIT_EXCHANGE   | rabbitmq exchange name for infrastructure
+| CHECK_SYSTEM | check infrastructure or not (default = true)
+| CHECK_WAIT_TIME | interval for wait respond from requirements
 
 License
 ----
