@@ -41,7 +41,7 @@ const runSystem = async function () {
     config.systemRabbit.serviceName
   );
   const info = new InfrastructureInfo(require('./package.json'), config.system.waitTime);
-  const system = new InfrastructureService(info, rabbit, {checkInterval: 2000});
+  const system = new InfrastructureService(info, rabbit, {checkInterval: 10000});
   await system.start();
   system.on(system.REQUIREMENT_ERROR, (requirement, version) => {
     log.error(`Not found requirement with name ${requirement.name} version=${requirement.version}.` +
